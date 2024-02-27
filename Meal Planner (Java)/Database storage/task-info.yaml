@@ -673,12 +673,12 @@ files:
           }
       }
     learner_created: true
-  - name: src/mealplanner/application/DB.java
-    visible: true
-    learner_created: true
-  - name: src/mealplanner/application/MealAdder.java
+  - name: src/mealplanner/application/MealApplication.java
     visible: true
     learner_created: true
 feedback_link: https://hyperskill.org/learn/step/25573#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: "Tue, 27 Feb 2024 18:05:29 UTC"
 record: -1

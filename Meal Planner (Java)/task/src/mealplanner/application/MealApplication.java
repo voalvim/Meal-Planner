@@ -3,15 +3,12 @@ package mealplanner.application;
 import mealplanner.entities.Meal;
 import mealplanner.entities.enums.MealEnum;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.sql.*;
+import java.util.*;
 
 public abstract class MealApplication {
-    public static void startMealApplication(Scanner sc) {
+    public static void startMealApplication(Scanner sc, List<Meal> mealList, Connection conn) {
         boolean running = true;
-        List<Meal> mealList = new ArrayList<>();
 
         while (running) {
             System.out.println("What would you like to do (add, show, exit)?");
@@ -48,11 +45,37 @@ public abstract class MealApplication {
                                 }
                                 List<String> ingredients = trimIngredients(untrimmedIngredients);
 
-                                Meal meal1 = new Meal(MealEnum.valueOf(meal.toUpperCase()), mealName, ingredients);
+                                Meal createdMeal = new Meal(MealEnum.valueOf(meal.toUpperCase()), mealName, ingredients);
+
+                                String insertIntoMeals = "INSERT INTO meals (category, meal, meal_id) VALUES (?, ?, ?)";
+
+                                String insertIntoIngredients = "INSERT INTO ingredients (ingredient, ingredient_id, meal_id ) VALUES (?, ?, ?)";
+
+                                try(PreparedStatement mealStatement = conn.prepareStatement(insertIntoMeals);
+                                    PreparedStatement ingredientStatement = conn.prepareStatement(insertIntoIngredients)){
+
+                                    mealStatement.setString(1, createdMeal.getMeal().toString());
+                                    mealStatement.setString(2, createdMeal.getMealName());
+                                    int mealId = idGenerator();
+                                    mealStatement.setInt(3, mealId);
+
+                                    mealStatement.executeUpdate();
+
+
+                                    for (String ingredient : createdMeal.getIngredients()) {
+                                        ingredientStatement.setString(1, ingredient);
+                                        ingredientStatement.setInt(2, idGenerator());
+                                        ingredientStatement.setInt(3, mealId);
+                                        ingredientStatement.executeUpdate();
+                                    }
+
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
 
                                 System.out.println("The meal has been added!");
 
-                                mealList.add(meal1);
+                                mealList.add(createdMeal);
                                 addMeal = false;
                                 break;
                             default:
@@ -63,15 +86,39 @@ public abstract class MealApplication {
                     break;
 
                 case "show":
-                    if (mealList.isEmpty()) {
-                        System.out.println("No meals saved. Add a meal first.");
-                    } else {
-                        for (Meal m : mealList) {
-                            System.out.println(m.toString());
-                            System.out.println();
+                    try(Statement statement = conn.createStatement()) {
+                        ResultSet mealResultSet = statement.executeQuery("SELECT * FROM meals");
+                        if (!mealResultSet.next()) {
+                            System.out.println("No meals saved. Add a meal first.");
+                        } else {
+                            mealList.clear();
+                            do {
+                                int mealId = mealResultSet.getInt("meal_id");
+                                String category = mealResultSet.getString("category");
+                                String mealName = mealResultSet.getString("meal");
+                                List<String> ingredientList = new ArrayList<>();
+
+                                try(PreparedStatement ingredientStatement = conn.prepareStatement("SELECT ingredient FROM ingredients WHERE meal_id = ?")) {
+                                    ingredientStatement.setInt(1, mealId);
+                                    ResultSet ingredientResultSet = ingredientStatement.executeQuery();
+                                    while (ingredientResultSet.next()) {
+                                        ingredientList.add(ingredientResultSet.getString("ingredient"));
+                                    }
+                                }
+
+                                mealList.add(new Meal(MealEnum.valueOf(category), mealName, ingredientList));
+                            } while (mealResultSet.next());
+
+                            for (Meal m : mealList) {
+                                System.out.println(m.toString());
+                                System.out.println();
+                            }
                         }
+                        break;
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        break;
                     }
-                    break;
 
                 case "exit":
                     System.out.println("Bye!");
@@ -125,5 +172,14 @@ public abstract class MealApplication {
             trimmedIngredients.add(trimmedIngredient);
         }
         return trimmedIngredients;
+    }
+
+    public static int idGenerator() {
+        final int MIN_ID = 0;
+        final int MAX_ID = 9999;
+
+        Random random = new Random();
+
+        return random.nextInt(MAX_ID - MIN_ID + 1) + MIN_ID;
     }
 }
