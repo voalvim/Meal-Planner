@@ -29,6 +29,7 @@ public class Main {
 
             List<Meal> mealList = new ArrayList<>();
             MealApplication.startMealApplication(sc, mealList, connection);
+            sc.close();
 
         }catch (SQLException e) {
             e.getMessage();

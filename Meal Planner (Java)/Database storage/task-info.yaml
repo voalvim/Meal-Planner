@@ -677,8 +677,15 @@ files:
     visible: true
     learner_created: true
 feedback_link: https://hyperskill.org/learn/step/25573#comment
-status: Solved
+status: Failed
 feedback:
-  message: Congratulations!
-  time: "Wed, 28 Feb 2024 19:34:54 UTC"
+  message: "Wrong answer in test #2\n\nWrong &quot;show&quot; output for a saved meal.\n\
+    \nPlease find below the output of your program during this failed test.\nNote\
+    \ that the &#39;&gt;&#39; character indicates the beginning of the input line.\n\
+    \n---\n\nWhat would you like to do (add, show, exit)?\n&gt; add\nWhich meal do\
+    \ you want to add (breakfast, lunch, dinner)?\n&gt; lunch\nInput the meal&#39;s\
+    \ name: \n&gt; sushi\nInput the ingredients: \n&gt; salmon, rice, avocado\nThe\
+    \ meal has been added!\nWhat would you like to do (add, show, exit)?\n&gt; show\n\
+    Which category do you want to print (breakfast, lunch, dinner)?"
+  time: "Wed, 28 Feb 2024 20:13:23 UTC"
 record: 3

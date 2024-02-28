@@ -33,7 +33,6 @@ public abstract class MealApplication {
                     break;
             }
         }
-        sc.close();
     }
     private static void addMeal(Scanner sc, List<Meal> mealList ,Connection conn) {
         boolean addMeal = true;
@@ -75,7 +74,7 @@ public abstract class MealApplication {
                     try(PreparedStatement mealStatement = conn.prepareStatement(insertIntoMeals);
                         PreparedStatement ingredientStatement = conn.prepareStatement(insertIntoIngredients)){
 
-                        mealStatement.setString(1, createdMeal.getMeal().toString());
+                        mealStatement.setString(1, createdMeal.getMealCategory().toString());
                         mealStatement.setString(2, createdMeal.getMealName());
                         int mealId = idGenerator();
                         mealStatement.setInt(3, mealId);
@@ -107,16 +106,32 @@ public abstract class MealApplication {
     }
 
     private static void showMeal(Scanner sc, List<Meal> mealList, Connection conn) {
-        try(Statement statement = conn.createStatement()) {
-            ResultSet mealResultSet = statement.executeQuery("SELECT * FROM meals");
-            if (!mealResultSet.next()) {
-                System.out.println("No meals saved. Add a meal first.");
+
+        System.out.println("Which category do you want to print (breakfast, lunch, dinner)?");
+        String categoryChoice = sc.next();
+        sc.nextLine();
+
+        while(!categoryChoice.equals("breakfast") && !categoryChoice.equals("lunch") && !categoryChoice.equals("dinner")) {
+            System.out.println("Wrong meal category! Choose from: breakfast, lunch, dinner.");
+            categoryChoice = sc.next();
+            sc.nextLine();
+        }
+        String uppercaseCategoryChoice = categoryChoice.toUpperCase(); //categories are stored as enums which are uppercase
+
+        String categoryQuery = "SELECT * FROM meals WHERE category = ?";
+
+        try(PreparedStatement statement = conn.prepareStatement(categoryQuery)) {
+            statement.setString(1, uppercaseCategoryChoice);
+            ResultSet categoryResultSet = statement.executeQuery();
+
+            if (!categoryResultSet.next()) {
+                System.out.println("No meals found.");
             } else {
                 mealList.clear();
                 do {
-                    int mealId = mealResultSet.getInt("meal_id");
-                    String category = mealResultSet.getString("category");
-                    String mealName = mealResultSet.getString("meal");
+                    int mealId = categoryResultSet.getInt("meal_id");
+                    String category = categoryResultSet.getString("category");
+                    String mealName = categoryResultSet.getString("meal");
                     List<String> ingredientList = new ArrayList<>();
 
                     try(PreparedStatement ingredientStatement = conn.prepareStatement("SELECT ingredient FROM ingredients WHERE meal_id = ?")) {
@@ -126,16 +141,17 @@ public abstract class MealApplication {
                             ingredientList.add(ingredientResultSet.getString("ingredient"));
                         }
                     }
-
                     mealList.add(new Meal(MealEnum.valueOf(category), mealName, ingredientList));
-                } while (mealResultSet.next());
+                } while (categoryResultSet.next());
 
+                System.out.println("Category: " + mealList.get(0).getMealCategory().toString().toLowerCase() + "\n");
                 for (Meal m : mealList) {
                     System.out.println(m.toString());
                     System.out.println();
                 }
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }

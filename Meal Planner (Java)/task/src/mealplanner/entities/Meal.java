@@ -2,27 +2,25 @@ package mealplanner.entities;
 
 import mealplanner.entities.enums.MealEnum;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Meal {
-    private MealEnum meal;
+    private MealEnum mealCategory;
     private String mealName;
     private List<String> ingredients;
 
-    public Meal(MealEnum meal, String mealName, List<String> ingredients) {
-        this.meal = meal;
+    public Meal(MealEnum mealCategory, String mealName, List<String> ingredients) {
+        this.mealCategory = mealCategory;
         this.mealName = mealName;
         this.ingredients = ingredients;
     }
 
-    public MealEnum getMeal() {
-        return meal;
+    public MealEnum getMealCategory() {
+        return mealCategory;
     }
 
-    public void setMeal(MealEnum meal) {
-        this.meal = meal;
+    public void setMealCategory(MealEnum mealCategory) {
+        this.mealCategory = mealCategory;
     }
 
     public String getMealName() {
@@ -49,8 +47,7 @@ public class Meal {
     public String toString() {
 
 
-        return "Category: " + getMeal().toString().toLowerCase() + "\n"
-                + "Name: " + getMealName() + "\n"
+        return  "Name: " + getMealName() + "\n"
                 + "Ingredients:\n" + String.join(System.lineSeparator(), ingredients);
     }
 }
