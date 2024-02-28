@@ -17,42 +17,13 @@ public abstract class MealApplication {
                 case "add":
                     addMeal(sc, mealList, conn);
                     break;
-
                 case "show":
-                    try(Statement statement = conn.createStatement()) {
-                        ResultSet mealResultSet = statement.executeQuery("SELECT * FROM meals");
-                        if (!mealResultSet.next()) {
-                            System.out.println("No meals saved. Add a meal first.");
-                        } else {
-                            mealList.clear();
-                            do {
-                                int mealId = mealResultSet.getInt("meal_id");
-                                String category = mealResultSet.getString("category");
-                                String mealName = mealResultSet.getString("meal");
-                                List<String> ingredientList = new ArrayList<>();
-
-                                try(PreparedStatement ingredientStatement = conn.prepareStatement("SELECT ingredient FROM ingredients WHERE meal_id = ?")) {
-                                    ingredientStatement.setInt(1, mealId);
-                                    ResultSet ingredientResultSet = ingredientStatement.executeQuery();
-                                    while (ingredientResultSet.next()) {
-                                        ingredientList.add(ingredientResultSet.getString("ingredient"));
-                                    }
-                                }
-
-                                mealList.add(new Meal(MealEnum.valueOf(category), mealName, ingredientList));
-                            } while (mealResultSet.next());
-
-                            for (Meal m : mealList) {
-                                System.out.println(m.toString());
-                                System.out.println();
-                            }
-                        }
-                        break;
-                    } catch (SQLException e) {
+                    try {
+                        showMeal(sc, mealList, conn);
+                    } catch (Exception e) {
                         e.printStackTrace();
-                        break;
                     }
-
+                    break;
                 case "exit":
                     System.out.println("Bye!");
                     running = false;
@@ -132,6 +103,40 @@ public abstract class MealApplication {
                     System.out.println("Wrong meal category! Choose from: breakfast, lunch, dinner.");
                     break;
             }
+        }
+    }
+
+    private static void showMeal(Scanner sc, List<Meal> mealList, Connection conn) {
+        try(Statement statement = conn.createStatement()) {
+            ResultSet mealResultSet = statement.executeQuery("SELECT * FROM meals");
+            if (!mealResultSet.next()) {
+                System.out.println("No meals saved. Add a meal first.");
+            } else {
+                mealList.clear();
+                do {
+                    int mealId = mealResultSet.getInt("meal_id");
+                    String category = mealResultSet.getString("category");
+                    String mealName = mealResultSet.getString("meal");
+                    List<String> ingredientList = new ArrayList<>();
+
+                    try(PreparedStatement ingredientStatement = conn.prepareStatement("SELECT ingredient FROM ingredients WHERE meal_id = ?")) {
+                        ingredientStatement.setInt(1, mealId);
+                        ResultSet ingredientResultSet = ingredientStatement.executeQuery();
+                        while (ingredientResultSet.next()) {
+                            ingredientList.add(ingredientResultSet.getString("ingredient"));
+                        }
+                    }
+
+                    mealList.add(new Meal(MealEnum.valueOf(category), mealName, ingredientList));
+                } while (mealResultSet.next());
+
+                for (Meal m : mealList) {
+                    System.out.println(m.toString());
+                    System.out.println();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
