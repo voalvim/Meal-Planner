@@ -15,74 +15,7 @@ public abstract class MealApplication {
             String option = sc.nextLine();
             switch (option) {
                 case "add":
-                    boolean addMeal = true;
-                    System.out.println("Which meal do you want to add (breakfast, lunch, dinner)?");
-                    while (addMeal) {
-                        String meal = sc.nextLine();
-                        switch (meal) {
-                            case "breakfast":
-                            case "lunch":
-                            case "dinner":
-                                System.out.println("Input the meal's name: ");
-                                String mealName = sc.nextLine();
-                                if (isInvalidMealName(mealName)) {
-                                    do {
-                                        System.out.println("Wrong format. Use letters only!");
-                                        mealName = sc.nextLine();
-                                    } while (isInvalidMealName(mealName));
-                                }
-
-                                System.out.println("Input the ingredients: ");
-                                String ingredientsString = sc.nextLine();
-                                List<String> untrimmedIngredients = Arrays.stream(ingredientsString.split(",")).toList();
-
-                                if (isInvalidIngredientList(untrimmedIngredients)) {
-                                    do {
-                                        System.out.println("Wrong format. Use letters only!");
-                                        ingredientsString = sc.nextLine();
-                                        untrimmedIngredients = Arrays.stream(ingredientsString.split(",")).toList();
-                                    } while (isInvalidIngredientList(untrimmedIngredients));
-                                }
-                                List<String> ingredients = trimIngredients(untrimmedIngredients);
-
-                                Meal createdMeal = new Meal(MealEnum.valueOf(meal.toUpperCase()), mealName, ingredients);
-
-                                String insertIntoMeals = "INSERT INTO meals (category, meal, meal_id) VALUES (?, ?, ?)";
-
-                                String insertIntoIngredients = "INSERT INTO ingredients (ingredient, ingredient_id, meal_id ) VALUES (?, ?, ?)";
-
-                                try(PreparedStatement mealStatement = conn.prepareStatement(insertIntoMeals);
-                                    PreparedStatement ingredientStatement = conn.prepareStatement(insertIntoIngredients)){
-
-                                    mealStatement.setString(1, createdMeal.getMeal().toString());
-                                    mealStatement.setString(2, createdMeal.getMealName());
-                                    int mealId = idGenerator();
-                                    mealStatement.setInt(3, mealId);
-
-                                    mealStatement.executeUpdate();
-
-
-                                    for (String ingredient : createdMeal.getIngredients()) {
-                                        ingredientStatement.setString(1, ingredient);
-                                        ingredientStatement.setInt(2, idGenerator());
-                                        ingredientStatement.setInt(3, mealId);
-                                        ingredientStatement.executeUpdate();
-                                    }
-
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-
-                                System.out.println("The meal has been added!");
-
-                                mealList.add(createdMeal);
-                                addMeal = false;
-                                break;
-                            default:
-                                System.out.println("Wrong meal category! Choose from: breakfast, lunch, dinner.");
-                                break;
-                        }
-                    }
+                    addMeal(sc, mealList, conn);
                     break;
 
                 case "show":
@@ -130,6 +63,76 @@ public abstract class MealApplication {
             }
         }
         sc.close();
+    }
+    private static void addMeal(Scanner sc, List<Meal> mealList ,Connection conn) {
+        boolean addMeal = true;
+        System.out.println("Which meal do you want to add (breakfast, lunch, dinner)?");
+        while (addMeal) {
+            String meal = sc.nextLine();
+            switch (meal) {
+                case "breakfast":
+                case "lunch":
+                case "dinner":
+                    System.out.println("Input the meal's name: ");
+                    String mealName = sc.nextLine();
+                    if (isInvalidMealName(mealName)) {
+                        do {
+                            System.out.println("Wrong format. Use letters only!");
+                            mealName = sc.nextLine();
+                        } while (isInvalidMealName(mealName));
+                    }
+
+                    System.out.println("Input the ingredients: ");
+                    String ingredientsString = sc.nextLine();
+                    List<String> untrimmedIngredients = Arrays.stream(ingredientsString.split(",")).toList();
+
+                    if (isInvalidIngredientList(untrimmedIngredients)) {
+                        do {
+                            System.out.println("Wrong format. Use letters only!");
+                            ingredientsString = sc.nextLine();
+                            untrimmedIngredients = Arrays.stream(ingredientsString.split(",")).toList();
+                        } while (isInvalidIngredientList(untrimmedIngredients));
+                    }
+                    List<String> ingredients = trimIngredients(untrimmedIngredients);
+
+                    Meal createdMeal = new Meal(MealEnum.valueOf(meal.toUpperCase()), mealName, ingredients);
+
+                    String insertIntoMeals = "INSERT INTO meals (category, meal, meal_id) VALUES (?, ?, ?)";
+
+                    String insertIntoIngredients = "INSERT INTO ingredients (ingredient, ingredient_id, meal_id ) VALUES (?, ?, ?)";
+
+                    try(PreparedStatement mealStatement = conn.prepareStatement(insertIntoMeals);
+                        PreparedStatement ingredientStatement = conn.prepareStatement(insertIntoIngredients)){
+
+                        mealStatement.setString(1, createdMeal.getMeal().toString());
+                        mealStatement.setString(2, createdMeal.getMealName());
+                        int mealId = idGenerator();
+                        mealStatement.setInt(3, mealId);
+
+                        mealStatement.executeUpdate();
+
+
+                        for (String ingredient : createdMeal.getIngredients()) {
+                            ingredientStatement.setString(1, ingredient);
+                            ingredientStatement.setInt(2, idGenerator());
+                            ingredientStatement.setInt(3, mealId);
+                            ingredientStatement.executeUpdate();
+                        }
+
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println("The meal has been added!");
+
+                    mealList.add(createdMeal);
+                    addMeal = false;
+                    break;
+                default:
+                    System.out.println("Wrong meal category! Choose from: breakfast, lunch, dinner.");
+                    break;
+            }
+        }
     }
 
     private static boolean isInvalidMealName(String input) {
