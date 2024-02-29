@@ -18,14 +18,23 @@ public class Main {
             connection.setAutoCommit(true);
             Statement statement = connection.createStatement();
 
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS meals (" +
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS meals (" +
                     "category VARCHAR(50)," +
                     "meal VARCHAR(50)," +
                     "meal_id INTEGER);" +
+
                     "CREATE TABLE IF NOT EXISTS ingredients (" +
                     "ingredient VARCHAR(50)," +
                     "ingredient_id INTEGER," +
-                    "meal_id INTEGER)");
+                    "meal_id INTEGER);" +
+
+                    "CREATE TABLE IF NOT EXISTS plan(" +
+                    "day_of_week VARCHAR(15)," +
+                    "meal VARCHAR(50)," +
+                    "category VARCHAR(50)," +
+                    "meal_id INTEGER);"
+            );
 
             List<Meal> mealList = new ArrayList<>();
             MealApplication.startMealApplication(sc, mealList, connection);

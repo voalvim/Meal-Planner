@@ -11,7 +11,7 @@ public abstract class MealApplication {
         boolean running = true;
 
         while (running) {
-            System.out.println("What would you like to do (add, show, exit)?");
+            System.out.println("What would you like to do (add, show, plan, exit)?");
             String option = sc.nextLine();
             switch (option) {
                 case "add":
@@ -23,6 +23,9 @@ public abstract class MealApplication {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    break;
+                case "plan":
+                    planWeek(sc, mealList, conn);
                     break;
                 case "exit":
                     System.out.println("Bye!");
@@ -153,6 +156,58 @@ public abstract class MealApplication {
         }
         catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void planWeek(Scanner sc, List<Meal> mealList, Connection conn) {
+        String[] daysOfWeek = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+
+        for (String day : daysOfWeek) {
+            System.out.println(day);
+            planDay(sc, day, conn);
+        }
+    }
+
+    private static void planDay(Scanner sc, String currentDay, Connection conn) {
+
+        String[] categories = {"BREAKFAST", "LUNCH", "DINNER"};
+
+        for (String currentCategory : categories) {
+
+            String categoryQuery = "SELECT * FROM meals WHERE category = ?";
+
+            try(PreparedStatement statement = conn.prepareStatement(categoryQuery)) {
+
+                statement.setString(1, currentCategory);
+                ResultSet categoryResultSet = statement.executeQuery();
+
+                List<String> meals = new ArrayList<>();
+
+                if (!categoryResultSet.next()) {
+                    System.out.println("No meals found.");
+                } else {
+                    do {
+                        meals.add(categoryResultSet.getString("meal"));
+                    } while (categoryResultSet.next());
+                }
+
+                for (String meal : meals) {
+                    System.out.println(meal);
+                }
+
+                System.out.println("Choose the " + currentCategory.toLowerCase() + " for " + currentDay + " from the list above:");
+
+                String choice = sc.nextLine();
+
+                while (!meals.contains(choice)) {
+                    System.out.println("This meal doesn’t exist. Choose a meal from the list above.");
+                    choice = sc.nextLine();
+                }
+
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
