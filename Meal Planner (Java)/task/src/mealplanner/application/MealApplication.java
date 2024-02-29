@@ -25,7 +25,26 @@ public abstract class MealApplication {
                     }
                     break;
                 case "plan":
-                    planWeek(sc, mealList, conn);
+                    try(Statement statement = conn.createStatement()) {
+                        ResultSet resultSet = statement.executeQuery("SELECT * FROM plan");
+                        if(resultSet.next()) {
+                            statement.executeUpdate("DROP TABLE plan");
+
+                            statement.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS plan(" +
+                                    "day_of_week VARCHAR(15)," +
+                                    "meal VARCHAR(50)," +
+                                    "category VARCHAR(50)," +
+                                    "meal_id INTEGER);");
+
+                            planWeek(sc, mealList, conn);
+                        }
+                        planWeek(sc, mealList, conn);
+                    }
+                    catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
                     break;
                 case "exit":
                     System.out.println("Bye!");
@@ -162,10 +181,47 @@ public abstract class MealApplication {
     private static void planWeek(Scanner sc, List<Meal> mealList, Connection conn) {
         String[] daysOfWeek = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
 
+        //planning phase
         for (String day : daysOfWeek) {
             System.out.println(day);
             planDay(sc, day, conn);
             System.out.println("Yeah! We planned the meals for " + day + ".");
+            System.out.println();
+        }
+
+        //post planning phase
+        for (String day : daysOfWeek) {
+            System.out.println(day);
+
+            String planQuery = "SELECT meal, category FROM plan WHERE day_of_week = ?";
+
+            try(PreparedStatement statement = conn.prepareStatement(planQuery)) {
+
+                statement.setString(1, day);
+                ResultSet planResultSet = statement.executeQuery();
+
+                Map<String, String> meals = new HashMap<>();
+
+                while (planResultSet.next()) {
+                    meals.put(planResultSet.getString("category"), planResultSet.getString("meal"));
+                }
+
+                System.out.print("Breakfast: ");
+                System.out.println(meals.get("BREAKFAST"));
+
+                System.out.print("Lunch: ");
+                System.out.println(meals.get("LUNCH"));
+
+                System.out.print("Dinner: ");
+                System.out.println(meals.get("DINNER"));
+
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+
+
             System.out.println();
         }
     }
@@ -183,31 +239,49 @@ public abstract class MealApplication {
                 statement.setString(1, currentCategory);
                 ResultSet categoryResultSet = statement.executeQuery();
 
-                List<String> meals = new ArrayList<>();
+                Map<Integer, String> meals = new LinkedHashMap<>();
 
                 if (!categoryResultSet.next()) {
                     System.out.println("No meals found.");
                 } else {
                     do {
-                        meals.add(categoryResultSet.getString("meal"));
+                        meals.put(categoryResultSet.getInt("meal_id"), categoryResultSet.getString("meal"));
                     } while (categoryResultSet.next());
                 }
 
-                for (String meal : meals) {
-                    System.out.println(meal);
+                for(String mealName : meals.values()) {
+                    System.out.println(mealName);
                 }
 
                 System.out.println("Choose the " + currentCategory.toLowerCase() + " for " + currentDay + " from the list above:");
 
                 String choice = sc.nextLine();
 
-                while (!meals.contains(choice)) {
+                while (!meals.containsValue(choice)) {
                     System.out.println("This meal doesn’t exist. Choose a meal from the list above.");
                     choice = sc.nextLine();
                 }
 
+                String insertIntoPlan = "INSERT INTO plan (day_of_week, meal, category, meal_id) VALUES (?, ?, ?, ?)";
+
+                try(PreparedStatement planStatement = conn.prepareStatement(insertIntoPlan)) {
+                    planStatement.setString(1, currentDay);
+                    planStatement.setString(2, choice);
+                    planStatement.setString(3, currentCategory.toUpperCase());
+
+                    Optional<Integer> mealId = getKeyBasedOnValue(meals, choice);
+
+                    if (mealId.isPresent()) {
+                        planStatement.setInt(4, mealId.get());
+                    } else {
+                        System.out.println("Error =(");
+                    }
+
+                    planStatement.executeUpdate();
+                }
+
             }
-            catch (SQLException e) {
+            catch (SQLException | NullPointerException e) {
                 e.printStackTrace();
             }
         }
@@ -262,5 +336,14 @@ public abstract class MealApplication {
         Random random = new Random();
 
         return random.nextInt(MAX_ID - MIN_ID + 1) + MIN_ID;
+    }
+
+    public static Optional<Integer> getKeyBasedOnValue(Map<Integer, String> map, String value) {
+        for (Map.Entry<Integer, String> entry : map.entrySet()) {
+            if (value.equals(entry.getValue())) {
+                return Optional.of(entry.getKey());
+            }
+        }
+        return Optional.empty();
     }
 }
