@@ -165,6 +165,8 @@ public abstract class MealApplication {
         for (String day : daysOfWeek) {
             System.out.println(day);
             planDay(sc, day, conn);
+            System.out.println("Yeah! We planned the meals for " + day + ".");
+            System.out.println();
         }
     }
 
@@ -174,7 +176,7 @@ public abstract class MealApplication {
 
         for (String currentCategory : categories) {
 
-            String categoryQuery = "SELECT * FROM meals WHERE category = ?";
+            String categoryQuery = "SELECT * FROM meals WHERE category = ? ORDER BY meal";
 
             try(PreparedStatement statement = conn.prepareStatement(categoryQuery)) {
 
