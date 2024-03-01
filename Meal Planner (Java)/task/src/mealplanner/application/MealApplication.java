@@ -3,6 +3,9 @@ package mealplanner.application;
 import mealplanner.entities.Meal;
 import mealplanner.entities.enums.MealEnum;
 
+import java.io.FileWriter;
+import java.io.IOError;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
@@ -11,12 +14,14 @@ public abstract class MealApplication {
         boolean running = true;
 
         while (running) {
-            System.out.println("What would you like to do (add, show, plan, exit)?");
+            System.out.println("What would you like to do (add, show, plan, save, exit)?");
             String option = sc.nextLine();
             switch (option) {
+
                 case "add":
                     addMeal(sc, mealList, conn);
                     break;
+
                 case "show":
                     try {
                         showMeal(sc, mealList, conn);
@@ -24,6 +29,7 @@ public abstract class MealApplication {
                         e.printStackTrace();
                     }
                     break;
+
                 case "plan":
                     try(Statement statement = conn.createStatement()) {
                         ResultSet resultSet = statement.executeQuery("SELECT * FROM plan");
@@ -46,6 +52,24 @@ public abstract class MealApplication {
                     }
 
                     break;
+
+                case "save":
+                    try(Statement statement = conn.createStatement()) {
+                        ResultSet resultSet = statement.executeQuery("SELECT * FROM plan");
+                        if(!resultSet.next()) {
+                            System.out.println("Unable to save. Plan your meals first.");
+                            break;
+                        }
+                        resultSet.close();
+                    }
+                    catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    savePlan(sc, conn);
+
+                    break;
+
                 case "exit":
                     System.out.println("Bye!");
                     running = false;
@@ -284,6 +308,51 @@ public abstract class MealApplication {
             catch (SQLException | NullPointerException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void savePlan(Scanner sc, Connection conn) {
+        System.out.println("Input a filename:");
+
+        String fileName = sc.nextLine();
+
+        try(Statement statement = conn.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT ingredient FROM ingredients JOIN plan ON ingredients.meal_id = plan.meal_id");
+
+            List<String> repeatedIngredientList = new ArrayList<>();
+
+            while(resultSet.next()) {
+                repeatedIngredientList.add(resultSet.getString("ingredient"));
+            }
+
+            Map<String, Integer> uniqueMap = new HashMap<>();
+
+            for (String ingredient : repeatedIngredientList) {
+                uniqueMap.put(ingredient, uniqueMap.getOrDefault(ingredient, 0) + 1);
+            }
+
+            StringBuilder plan = new StringBuilder();
+
+            for (Map.Entry<String, Integer> entry : uniqueMap.entrySet()) {
+                plan.append(entry.getKey());
+                if(entry.getValue() > 1) {
+                    plan.append(" x").append(entry.getValue());
+                }
+                plan.append("\n");
+            }
+
+            try(FileWriter file = new FileWriter(fileName, false)) {
+                file.write(plan.toString());
+
+                System.out.println("Saved!");
+            }
+
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 

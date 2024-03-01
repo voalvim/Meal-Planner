@@ -1,0 +1,18 @@
+banana 
+eggs 
+bread x13
+oats 
+chicken 
+onion x13
+peanut butter 
+milk 
+tomato x28
+sausages 
+lettuce x14
+cheese x39
+bacon 
+tomatoes 
+ham x12
+olives x14
+flour x14
+salami x14
